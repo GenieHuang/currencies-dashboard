@@ -1,0 +1,12 @@
+# byte-compiled
+__pycache__/
+
+# virtual environments
+.venv
+
+# test files
+test.py
+
+# testing output of response
+response.json
+
