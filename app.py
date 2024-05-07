@@ -1,14 +1,13 @@
 import pandas as pd
 from datetime import date
 import requests
-import json
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 import asyncio
 
-from shiny import App, Inputs, Outputs, Session, reactive, render, req, ui
+from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 
 # load data
 currencySymbol = pd.read_csv('./data/currency_shortcodes.csv')
@@ -248,18 +247,6 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         context = f"Exchange Value: **{value} {target_currency}** for **{amount} {base_currency}**"
         return ui.markdown(context)
-    
-
-    # @output
-    # @render.text("exchange_value")
-    # def exchange_value():
-    #     base_currency = input.base_currency().split("(")[1].split(")")[0]
-    #     target_currency = input.target_currency().split("(")[1].split(")")[0]
-    #     amount = input.amount()
-
-    #     value, amount = currency_calculator(base_currency, target_currency, amount)
-    #     return f"Exchange Value: {value} {target_currency} for {amount} {base_currency}"
-
 
 
 # run app
