@@ -22,6 +22,9 @@ today = date.today().strftime("%Y-%m-%d")
 # Min Date
 min_day = date.today() - pd.Timedelta(days=200)
 
+# Start Date
+start_day = date.today() - pd.Timedelta(days=30)
+
 # API Key
 api_key = 'Jlv9nG6xEQHbF9MIY2NkzSasVOVe50I6'
 
@@ -47,7 +50,7 @@ def about_content():
         
         **The dashboard is deployed on Shinyapps.io and can be accessed via the following link:**
         
-        **https://currencies-jingyi.shinyapps.io/currencies-dashboard/**
+        - **https://currencies-jingyi.shinyapps.io/currencies-dashboard/**
 
         To run this dashboard on your local machine, follow these steps:
 
@@ -76,7 +79,7 @@ app_ui = ui.page_navbar(
                     ui.sidebar(
                                 ui.input_selectize("base","Base Currency", currency_list, selected="US Dollar (USD)"),
                                 ui.input_selectize("target","Target Currencies", currency_list, selected="Euro (EUR)", multiple=True),
-                                ui.input_date_range("dates", "Dates", start="2024-04-01", end=today, max=today, min= min_day),
+                                ui.input_date_range("dates", "Dates", start=start_day, end=today, max=today, min= min_day),
                                 ui.output_ui("table_currency_selection"),
                                 ui.output_ui("plot_currency_selection"),
                                 width=350,

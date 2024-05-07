@@ -14,7 +14,7 @@ The purpose of this dashboard is to provide a user-friendly platform for users t
 ### Setup Instructions
 
 **The dashboard is deployed on Shinyapps.io and can be accessed via the following link:**
-https://currencies-jingyi.shinyapps.io/currencies-dashboard/
+- **https://currencies-jingyi.shinyapps.io/currencies-dashboard/**
 
 To run this dashboard on your local machine, follow these steps:
 
