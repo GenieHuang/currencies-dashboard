@@ -21,5 +21,5 @@ for currency in data:
 df = pd.DataFrame(currency_symbols, columns=['name', 'short_code'])
 
 # Save the DataFrame to a CSV file
-df.to_csv('./data/' + 'currency_symbols.csv', index=False)
+df.to_csv('./data/' + 'currency_shortcodes.csv', index=False)
 
