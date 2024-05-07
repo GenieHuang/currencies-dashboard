@@ -44,6 +44,13 @@ def about_content():
 
         ### Setup Instructions
 
+        
+        **The dashboard is deployed on Shinyapps.io and can be accessed via the following link:**
+        
+        **https://currencies-jingyi.shinyapps.io/currencies-dashboard/**
+
+        To run this dashboard on your local machine, follow these steps:
+
         1. Clone the repository to your local machine.
         2. Run `uv venv` to create a virtual environment.
         3. Run `.venv\Scripts\activate` to activate the virtual environment.
