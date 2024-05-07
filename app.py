@@ -52,7 +52,7 @@ app_ui = ui.page_navbar(
                  ),
                  ui.card(
                     #  ui.output_text("exchange_value"),
-                    ui.input_action_button("button", "Compute", width=350),
+                    ui.input_action_button("button", "Compute", width='300px'),
                     ui.output_ui("compute"),
                  )),
     title = "Currency Trends and Exchange Calculator",
@@ -65,7 +65,6 @@ def currency_timeseries(base, symbols, start_date, end_date):
     url = f'https://api.currencybeacon.com/v1/timeseries?api_key={api_key}&base={base}&start_date={start_date}&end_date={end_date}&symbols={symbols}'
     
     response = requests.get(url).json()
-    print(response)
 
     # Extract the response data into a dataframe
     response_data = response['response']
@@ -97,19 +96,22 @@ def currency_calculator(base_currency, target_currency, amount):
 def server(input: Inputs, output: Outputs, session: Session):
     def get_data():
 
-        # Params
-        base = input.base().split("(")[1].split(")")[0]
+        if not input.base() or input.base() == "" or input.target() is None or input.target() == "" or input.dates() is None or input.dates() == "":
+            return pd.DataFrame(columns=['Date', 'Currency', 'Rate'])
+        else:
+            # Params
+            base = input.base().split("(")[1].split(")")[0]
 
-        target = input.target()
-        target_list = [x.split("(")[1].split(")")[0] for x in target]
-        target_str = ','.join(target_list)
+            target = input.target()
+            target_list = [x.split("(")[1].split(")")[0] for x in target]
+            target_str = ','.join(target_list)
 
-        start_date = input.dates()[0]
-        end_date = input.dates()[1]
+            start_date = input.dates()[0]
+            end_date = input.dates()[1]
 
-        # Get the historical timeseries data
-        df = currency_timeseries(base, target_str, start_date, end_date)
-        return df
+            # Get the historical timeseries data
+            df = currency_timeseries(base, target_str, start_date, end_date)
+            return df
     
 
     @output
@@ -117,7 +119,10 @@ def server(input: Inputs, output: Outputs, session: Session):
     def table_currency_selection():
         target_list = input.target()
 
-        return ui.input_selectize("table_currency","Table Currency", target_list, selected=target_list[0], multiple=True)
+        if not input.base() or input.base() == "" or not target_list or target_list == "" or not input.dates() or input.dates() == "":
+            pass
+        else:
+            return ui.input_selectize("table_currency","Table Currency", target_list, selected=target_list[0], multiple=True)
     
 
     @render.data_frame("historical_table")
@@ -127,9 +132,18 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @reactive.Calc
     def calculate_historical_table():
+        
         df = get_data()
         selected_currencies = [x.split("(")[1].split(")")[0] for x in input.table_currency()]
+
         df = df[df['Currency'].isin(selected_currencies)]
+        df['Rate'] = df['Rate'].round(3)
+
+        # The variance between the current rate and the previous rate
+        df['Variance'] = df.groupby('Currency')['Rate'].diff()
+
+        # Fill the first variance with 0
+        df['Variance'] = df['Variance'].fillna(0)
         return df
     
 
@@ -138,7 +152,10 @@ def server(input: Inputs, output: Outputs, session: Session):
     def plot_currency_selection():
         target_list = input.target()
 
-        return ui.input_selectize("plot_currency","Plot Currency", target_list, selected=target_list[0], multiple=True)
+        if not input.base() or input.base() == "" or not target_list or target_list == "" or not input.dates() or input.dates() == "":
+            pass
+        else:
+            return ui.input_selectize("plot_currency","Plot Currency", target_list, selected=target_list[0], multiple=True)
     
 
     @output
@@ -187,7 +204,10 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         value, amount = currency_calculator(base_currency, target_currency, amount)
 
-        return f"Exchange Value: {value} {target_currency} for {amount} {base_currency}"
+        value = round(value, 2)
+
+        context = f"Exchange Value: **{value} {target_currency}** for **{amount} {base_currency}**"
+        return ui.markdown(context)
     
 
     # @output
