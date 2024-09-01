@@ -13,6 +13,11 @@ The purpose of this dashboard is to provide a user-friendly platform for users t
 
 ### Setup Instructions
 
+**The dashboard is deployed on Shinyapps.io and can be accessed via the following link:**
+- **https://currencies-jingyi.shinyapps.io/currencies-dashboard/**
+
+To run this dashboard on your local machine, follow these steps:
+
 1. Clone the repository to your local machine.
 2. Run `uv venv` to create a virtual environment.
 3. Run `.venv\Scripts\activate` to activate the virtual environment.
@@ -23,6 +28,8 @@ The purpose of this dashboard is to provide a user-friendly platform for users t
 ### Usage Examples
 
 - **Historical Data:** Select the base currency and one or more target currencies, then specify the date range. The dashboard will display a table and a plot of the historical exchange rates of the selected currencies. You can further refine the data displayed in the table and plot by using the "table currency" and "plot currency" selectors to choose which of the selected target currencies you want to include.
+
+**_Note that you need to select the "table currency" and "plot currency" after selecting more than one target currency, otherwise, the dashboard will display the data for the first target currency by default._**
 
 - **Currency Exchange Calculator:** Select the base currency and the target currency, and input the amount you want to convert. Click the "Compute" button and the dashboard will display the converted amount in the target currency.
 
