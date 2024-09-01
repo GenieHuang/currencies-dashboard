@@ -1,6 +1,8 @@
 import pandas as pd
 from datetime import date
 import requests
+import configparser
+import pathlib
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -25,8 +27,14 @@ min_day = date.today() - pd.Timedelta(days=200)
 # Start Date
 start_day = date.today() - pd.Timedelta(days=30)
 
+# Read Configuration File
+parser = configparser.ConfigParser()
+script_path = pathlib.Path(__file__).parent.resolve()
+config_file = "configuration.conf"
+parser.read(f"{script_path}/{config_file}")
+
 # API Key
-api_key = 'Jlv9nG6xEQHbF9MIY2NkzSasVOVe50I6'
+api_key = parser.get("api_config","api_key")
 
 
 # About Content
