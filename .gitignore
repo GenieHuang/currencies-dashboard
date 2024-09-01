@@ -13,3 +13,5 @@ response.json
 # configuration file
 configuration.conf
 
+rsconnect-python
+
