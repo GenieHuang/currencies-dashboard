@@ -10,3 +10,6 @@ test.py
 # testing output of response
 response.json
 
+# configuration file
+configuration.conf
+

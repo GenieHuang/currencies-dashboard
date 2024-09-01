@@ -1,9 +1,17 @@
 import pandas as pd
+import configparser
+import pathlib
 import requests
 
 
+# Read Configuration File
+parser = configparser.ConfigParser()
+script_path = pathlib.Path(__file__).parent.resolve()
+config_file = "configuration.conf"
+parser.read(f"{script_path}/{config_file}")
+
 # API Key
-api_key = 'Jlv9nG6xEQHbF9MIY2NkzSasVOVe50I6'
+api_key = parser.get("api_config", "api_key")
 
 # Request currencies API
 url = 'https://api.currencybeacon.com/v1/currencies?api_key=' + api_key +'&type=fiat'
