@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 import asyncio
+from prophet import Prophet
 
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 
@@ -22,10 +23,10 @@ currency_list = currency_list.tolist()
 today = date.today().strftime("%Y-%m-%d")
 
 # Min Date
-min_day = date.today() - pd.Timedelta(days=200)
+min_day = date.today() - pd.Timedelta(days=365*5)
 
 # Start Date
-start_day = date.today() - pd.Timedelta(days=30)
+start_day = date.today() - pd.Timedelta(days=366)
 
 # Read Configuration File
 parser = configparser.ConfigParser()
@@ -173,6 +174,39 @@ def server(input: Inputs, output: Outputs, session: Session):
             return df
     
 
+    def get_forecast_df():
+        all_forecasts = []
+        models = {}
+
+        df = get_data()
+        
+        selected_currencies = [x.split("(")[1].split(")")[0] for x in input.plot_currency()]
+
+        df.rename(columns={'Date': 'ds', 'Rate': 'y'}, inplace=True)
+        df["ds"] = pd.to_datetime(df["ds"])
+
+
+        for currency in selected_currencies:
+            df_currency = df[df['Currency'] == currency][['ds','y']]
+            # print(df_currency)
+            m = Prophet(growth='linear')
+
+            m.fit(df_currency)
+            models[currency] = m
+
+            future = m.make_future_dataframe(periods=30, include_history=False)
+            forecast = m.predict(future)
+
+            forecast['Currency'] = currency
+            future_df= forecast[["Currency","ds", "yhat", "yhat_lower", "yhat_upper"]]
+            all_forecasts.append(future_df)
+
+        if all_forecasts:
+            combined_forecast = pd.concat(all_forecasts, ignore_index=True)
+            return combined_forecast, models
+        else:
+            return pd.DataFrame(),{}
+
     @output
     @render.ui("table_currency_selection")
     def table_currency_selection():
@@ -220,32 +254,105 @@ def server(input: Inputs, output: Outputs, session: Session):
     @output
     @render.plot("historical_plot")
     def historical_plot():
-        df = get_data()
-        df["Date"] = pd.to_datetime(df["Date"])
 
-        fig,ax = plt.subplots(figsize=(14, 5))
+        start_date = input.dates()[0]
+        end_date = input.dates()[1]
 
-        selected_currencies = [x.split("(")[1].split(")")[0] for x in input.plot_currency()]
-        selected_currencies_names = input.plot_currency()
+        # No forecast if there is less than one year of training data
+        if (end_date - start_date).days < 365:
+            df = get_data()
+            df["Date"] = pd.to_datetime(df["Date"])
 
-        for currency in selected_currencies:
-            df_currency = df[df['Currency'] == currency]
-            ax.plot(df_currency['Date'], df_currency['Rate'], label=currency)
+            fig,ax = plt.subplots(figsize=(14, 5))
 
-        if len(selected_currencies) > 1:
-            ax.set_title(f'Historical Exchange Rates from {input.base()} to {", ".join(selected_currencies_names)}')
-        else:
-            ax.set_title(f'Historical Exchange Rates from {input.base()} to {selected_currencies_names[0]}')
+            selected_currencies = [x.split("(")[1].split(")")[0] for x in input.plot_currency()]
+            selected_currencies_names = input.plot_currency()
+
+            for currency in selected_currencies:
+                df_currency = df[df['Currency'] == currency]
+                ax.plot(df_currency['Date'], df_currency['Rate'], label=currency)
+
+            if len(selected_currencies) > 1:
+                ax.set_title(f'Historical Exchange Rates from {input.base()} to {", ".join(selected_currencies_names)}')
+            else:
+                ax.set_title(f'Historical Exchange Rates from {input.base()} to {selected_currencies_names[0]}')
+            
+            ax.set_ylabel('Currency Rate')
+            ax.legend(df["Currency"].unique(), loc='upper left')
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
         
-        ax.set_ylabel('Currency Rate')
-        ax.legend(df["Currency"].unique(), loc='upper left')
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-    
-        plt.xticks(rotation=0)
-        plt.tight_layout()
+            plt.xticks(rotation=0)
+            plt.tight_layout()
 
-        return fig
-    
+            return fig
+        else:
+            future_df, models = get_forecast_df()
+            future_df["ds"] = pd.to_datetime(future_df["ds"])
+
+            df = get_data()
+            df["Date"] = pd.to_datetime(df["Date"])
+
+            colors = plt.cm.tab10.colors
+
+            selected_currencies = [x.split("(")[1].split(")")[0] for x in input.plot_currency()]
+            selected_currencies_names = input.plot_currency()
+
+            all_dates = pd.concat([
+            pd.DataFrame({'ds': df['Date'].unique()}),
+            pd.DataFrame({'ds': future_df['ds'].unique()})
+        ])
+            
+            date_range = pd.date_range(
+                start=all_dates['ds'].min(),
+                end=all_dates['ds'].max()
+            )
+
+            for i, currency in enumerate(selected_currencies):
+                color = colors[i % len(colors)]
+        
+                if currency in models:
+                    historical_data = df[df['Currency'] == currency]
+                
+                plt.plot(
+                    historical_data['Date'], 
+                    historical_data['Rate'],
+                    color=color, 
+                    linestyle='-',
+                    alpha=0.7,
+                    label=f'{currency} Historical Rate'
+                )
+
+                forecast_data = future_df[future_df['Currency'] == currency]
+
+                plt.plot(
+                    forecast_data['ds'],
+                    forecast_data['yhat'],
+                    color=color,
+                    linestyle='--',
+                    linewidth=2,
+                    label=f'{currency} Forecasted Rate (30 days)',
+                )
+
+                plt.fill_between(
+                    forecast_data['ds'],
+                    forecast_data['yhat_lower'],
+                    forecast_data['yhat_upper'],
+                    color=color,
+                    alpha=0.2
+                )
+
+            if len(selected_currencies) > 1:
+                plt.title(f'Historical and 30-days Forecast Exchange Rates from {input.base()} to {", ".join(selected_currencies_names)}')
+            else:
+                plt.title(f'Historical and 30-days Forecast Exchange Rates from {input.base()} to {selected_currencies_names[0]}')
+            
+            plt.xlabel('Date', fontsize=12)
+            plt.ylabel('Rate', fontsize=12)
+            plt.grid(True, alpha=0.3)
+            
+            return plt.gcf()
+        
+
     @output
     @render.ui
     @reactive.event(input.button)
